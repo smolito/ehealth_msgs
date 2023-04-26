@@ -18,7 +18,7 @@ def get_unique_segment_names(file):
             if len(item) == 3
         ]
         unique_segments = set(unique_segments)
-
+        file_read.close()
         return unique_segments
 
 
@@ -32,7 +32,7 @@ for single_file in os.listdir(os.path.join(data_root)):
 
 unique_segments_in_msgs = set(unique_segments_in_msgs)
 unique_segments_in_msgs = list(unique_segments_in_msgs)
-print("whole ", unique_segments_in_msgs)
+# print("whole ", unique_segments_in_msgs)
 
 # set(unique_segments_in_msgs)
 #
