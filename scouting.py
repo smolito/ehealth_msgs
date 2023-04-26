@@ -1,5 +1,4 @@
-# script written to analyze data in messages
-# test
+# script written to explore data in messages
 
 import os
 
@@ -23,6 +22,21 @@ def get_unique_segment_names(file):
         return unique_segments
 
 
-for single_file in os.listdir(os.path.join(data_root)):
-    print(get_unique_segment_names(single_file))
+unique_segments_in_msgs = []
 
+for single_file in os.listdir(os.path.join(data_root)):
+    single_set = get_unique_segment_names(single_file)
+    set2list = list(single_set)
+    unique_segments_in_msgs = unique_segments_in_msgs + set2list
+    print(set(unique_segments_in_msgs))
+
+unique_segments_in_msgs = set(unique_segments_in_msgs)
+unique_segments_in_msgs = list(unique_segments_in_msgs)
+print("whole ", unique_segments_in_msgs)
+
+# set(unique_segments_in_msgs)
+#
+# if unique_segments_in_msgs.__contains__("MSA"):
+#     print("msa included")
+# else:
+#     print("nah")
