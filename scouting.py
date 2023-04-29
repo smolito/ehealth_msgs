@@ -28,15 +28,7 @@ for single_file in os.listdir(os.path.join(data_root)):
     single_set = get_unique_segment_names(single_file)
     set2list = list(single_set)
     unique_segments_in_msgs = unique_segments_in_msgs + set2list
-    print(set(unique_segments_in_msgs))
+    # print(set(unique_segments_in_msgs))
 
 unique_segments_in_msgs = set(unique_segments_in_msgs)
 unique_segments_in_msgs = list(unique_segments_in_msgs)
-# print("whole ", unique_segments_in_msgs)
-
-# set(unique_segments_in_msgs)
-#
-# if unique_segments_in_msgs.__contains__("MSA"):
-#     print("msa included")
-# else:
-#     print("nah")
