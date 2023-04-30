@@ -1,3 +1,6 @@
+_raw_files/test_comm.txt
+_msgs_clean
+_data_by_pid
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

@@ -57,6 +57,8 @@ def parse_raw_msgs(file):
                                 byPIDfile_write.writelines(msg_block_buffer)
                                 byPIDfile_write.close()
                                 msg_block_buffer = []
+                        else:
+                            print("different ids at", msg_block_start_id, ", patient", curr_pid)
 
     file_read.close()
 
