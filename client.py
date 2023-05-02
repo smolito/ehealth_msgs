@@ -1,19 +1,21 @@
 import os
 import matplotlib.pyplot as plot
 import scouting
-from datetime import datetime, date, time, timezone
+import datetime
+import socket
 
-t_from = "20110803092503"
-t_to = "20110803092803"
-patient = "2011033"
+t_from = "20110622092400"
+t_to = "20110622095000"
+patient = "2011024"
 vital_p = "001000^VITAL HR"
 parameter_list = scouting.unique_vitals_in_msgs
 
 
 def datetime_from_msg(msg_time):
-    d = date(int(msg_time[0:4]), int(msg_time[4:6]), int(msg_time[6:8]))
-    t = time(int(msg_time[8:10]), int(msg_time[10:12]), int(msg_time[12:14]))
-    return datetime.combine(d, t)
+    d = datetime.datetime(int(msg_time[0:4]), int(msg_time[5:6]), int(msg_time[6:8]))
+    t = datetime.time(int(msg_time[8:10]), int(msg_time[10:12]), int(msg_time[12:14]))
+    combined = d.combine(d, t)
+    return combined
 
 
 def plot_vitals(pid, vital_parameter, time_from, time_to):
@@ -39,7 +41,8 @@ def plot_vitals(pid, vital_parameter, time_from, time_to):
                 one_block_check = False
 
     read_file.close()
-
+    print("last times are: ", time_at_observation[-5:])
+    print("last vitals are: " + str(vital_values[-5:]))
     plot.plot(time_at_observation, vital_values)
     plot.xlabel("time")
     plot.ylabel(units_measure)
@@ -49,3 +52,4 @@ def plot_vitals(pid, vital_parameter, time_from, time_to):
 
 plot_vitals(patient, vital_p, t_from, t_to)
 print(datetime_from_msg(t_from))
+print(datetime.datetime(2011, 6, 22, 9, 45, 34))
