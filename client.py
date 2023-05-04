@@ -51,5 +51,28 @@ def plot_vitals(pid, vital_parameter, time_from, time_to):
 
 
 plot_vitals(patient, vital_p, t_from, t_to)
-print(datetime_from_msg(t_from))
-print(datetime.datetime(2011, 6, 22, 9, 45, 34))
+# print(datetime_from_msg(t_from))
+# print(datetime.datetime(2011, 6, 22, 9, 45, 34))
+
+
+def client_program():
+    host = "127.0.0.1"
+    port = 3001
+
+    client_socket = socket.socket()
+    client_socket.connect((host, port))  # connect to the server
+
+    message = input(" -> ")  # take input
+
+    while message.lower().strip() != 'bye':
+        client_socket.send(message.encode())  # send message
+        data = client_socket.recv(1024).decode()  # receive response
+
+        print('Received from server: ' + data + " size: " + str(data.__sizeof__()) + " bytes")  # show in terminal
+
+        message = input(" -> ")  # again take input
+
+    client_socket.close()  # close the connection
+
+
+client_program()
