@@ -52,7 +52,7 @@ def parse_raw_msgs(file):
                         # print(msg_block_end_id, msg_block_start_id)
                         if msg_block_start_id == msg_block_end_id:  # message end verification
 
-                            with open(os.path.join("_data_by_pid", curr_pid), "a") as byPIDfile_write:
+                            with open(os.path.join("_data_by_pid", curr_pid + ".txt"), "a") as byPIDfile_write:
                                 msg_block_buffer.append("\n")
                                 byPIDfile_write.writelines(msg_block_buffer)
                                 byPIDfile_write.close()

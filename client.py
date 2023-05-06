@@ -3,7 +3,9 @@ import matplotlib.pyplot as plot
 import scouting
 import datetime
 import socket
+import json
 
+send_whole_file = True
 t_from = "20110622092400"
 t_to = "20110622095000"
 patient = "2011024"
@@ -50,29 +52,25 @@ def plot_vitals(pid, vital_parameter, time_from, time_to):
     plot.show()
 
 
-plot_vitals(patient, vital_p, t_from, t_to)
+# plot_vitals(patient, vital_p, t_from, t_to)
 # print(datetime_from_msg(t_from))
 # print(datetime.datetime(2011, 6, 22, 9, 45, 34))
 
 
 def client_program():
     host = "127.0.0.1"
-    port = 3001
+    port = 9090
 
-    client_socket = socket.socket()
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client_socket.connect((host, port))  # connect to the server
 
-    message = input(" -> ")  # take input
+    request = [send_whole_file, patient]
 
-    while message.lower().strip() != 'bye':
-        client_socket.send(message.encode())  # send message
-        data = client_socket.recv(1024).decode()  # receive response
-
-        print('Received from server: ' + data + " size: " + str(data.__sizeof__()) + " bytes")  # show in terminal
-
-        message = input(" -> ")  # again take input
-
-    client_socket.close()  # close the connection
-
-
-client_program()
+    if send_whole_file:
+        print(json.dumps(request))
+        client_socket.send(json.dumps(request).encode())  # send request parameters
+        data = client_socket.recv(1024).decode()
+        print('Received from server: ' + str(data.__sizeof__()) + " bytes" + "msg: " + data)
+        client_socket.send(str("msg received").encode())
+        print(data)
+        client_socket.close()
