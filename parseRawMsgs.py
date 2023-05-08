@@ -64,5 +64,6 @@ def parse_raw_msgs(file):
 
 
 for single_file in os.listdir(os.path.join(data_root)):
-    print("parsing raw", single_file, "right now")
+    file_size = os.path.getsize(os.path.join(data_root, single_file))
+    print("parsing raw", single_file, "right now; " + "size " + str(file_size) + " bytes")
     parse_raw_msgs(single_file)

@@ -3,6 +3,32 @@ import os
 import socket
 
 
+def vitals2plot(pid, vital_parameter, time_from, time_to):
+    vital_values = []
+    time_at_observation = []
+    units_measure = ""
+
+    if not int(time_from) < int(time_to):
+        return print("can't plot vital graph, incorrect time input")
+
+    with open(os.path.join("_data_by_pid", pid + ".txt"), "r") as read_file:
+
+        for line in read_file:
+            segment = line.split("|")
+
+            if segment[0] == "OBR" and int(time_from) <= int(segment[7]) <= int(time_to):
+                one_block_check = True
+
+            if segment[0] == "OBX" and segment[3] == vital_parameter and one_block_check:
+                vital_values.append(int(segment[5]))
+                time_at_observation.append(segment[14])
+                units_measure = segment[6]
+                one_block_check = False
+
+    read_file.close()
+    return time_at_observation, vital_values, pid, vital_parameter, units_measure
+
+
 def simple_comm():
     host = "127.0.0.1"
     port = 9090
@@ -15,46 +41,34 @@ def simple_comm():
     print("got a connection from: " + str(address))
 
     while True:
-        data = socket_connection.recv(1024)
-        response = "server response"
-        socket_connection.sendall(response.encode())
+        request = socket_connection.recv(1024)
+
+        if request.decode() == "response received":
+            break
+
+        request = request.decode()
+        request = json.loads(request)
+        print(request)
+
+        if request["whole_file"]:
+            file = open(os.path.join("_data_by_pid", request["pid"] + ".txt"), "r")
+            response = file.read().encode()
+            file.close()
+            socket_connection.sendall(response)
+
+        if request["plot"]:
+            plot_data = vitals2plot(
+                request["pid"],
+                request["vital_parameter"],
+                request["time_from"],
+                request["time_to"]
+            )
+            print(type(plot_data))
+            response = json.dumps(plot_data).encode()
+            print(response.__sizeof__())
+            socket_connection.sendall(response)
+
+    server_socket.close()
 
 
 simple_comm()
-
-
-def server_program():
-    host = "127.0.0.1"
-    port = 9090
-
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # get a socket instance
-    server_socket.bind((host, port))  # bind() takes TUPLE as an argument
-
-    server_socket.listen()  # how many connections until it starts rejecting new ones
-    socket_connection, address = server_socket.accept()  # accept new connection
-    print("Connection from: " + str(address))
-
-    while True:
-        # receive data stream. it won't accept data packet greater than .recv bytes
-        data_received = socket_connection.recv(1024).decode()
-
-        if not data_received:
-            print("no data received")
-            break
-
-        print("size: " + str(data_received.__sizeof__()) + " bytes," + " msg: " + str(data_received))
-
-        data_to_send = json.loads(data_received)
-        print(type(data_to_send), data_to_send)
-
-        if data_to_send[0]:  # if a whole file is requested
-            response = "_data_by_pid/" + str(data_to_send[1]) + ".txt"
-            file_size = os.path.getsize(response)
-            socket_connection.send(("sending " + data_to_send[1] + " size " + str(file_size)).encode())
-
-            file = open(response, "rb")
-            data_response = file.read()
-            socket_connection.sendall(data_response)
-            file.close()
-
-        # socket_connection.send(data_to_send.encode())  # send data to the client
