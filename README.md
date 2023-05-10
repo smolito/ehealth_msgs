@@ -1,5 +1,5 @@
 # ehealth_msgs
-Basic hl7 and fhir communication scripts with predetermined messages.
+Basic HL7 and FHIR message generation scripts with predetermined messages.
 
 HOW TO USE
 
