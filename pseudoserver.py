@@ -21,14 +21,13 @@ def create_hl7(pid, vital_parameter, send_whole_file, time_from, time_to):
             if segment[0] == "OBX" and send_whole_file:
                 obx = obx + readline
 
-            if segment[0] == "OBX" and not send_whole_file and int(time_from) <= int(observation_time) <= int(time_to):
-                if vital_parameter.__contains__(segment[3].strip()):
-                    obx_init = "OBX|" + str(obx_num) + "|NM|" + segment[3].strip() + "|" + segment[4] + "|" + segment[
-                        5] + "|" + segment[6] + "|||||" + segment[11] + "|||" + segment[14] + "|||" + "\n"
-                    obx = obx + obx_init
-                    obx_num += 1
+            if segment[0] == "OBX" and int(time_from) <= int(observation_time) <= int(time_to) and vital_parameter.__contains__(segment[3].strip()):
+                obx_init = "OBX|" + str(obx_num) + "|NM|" + segment[3].strip() + "|" + segment[4] + "|" + segment[
+                    5] + "|" + segment[6] + "|||||" + segment[11] + "|||" + segment[14] + "|||" + "\n"
+                obx = obx + obx_init
+                obx_num += 1
 
-            if segment[0] == "MSA":
+            if segment[0] == "MSA" and obx != "":
                 msh_header = "MSH|^~\&|" + "pseudoserver|" + "userpc|" + "client|" + "client facility|" + datetime.datetime.now().strftime(
                     "%Y%m%d%H%M%S") + "|ORU^R01^ORU_R01|" + str(
                     msgid) + "|T|" + "|2.5|" + "||" + "NE|" + "AL|" + "CZE|" + "ASCII|" + "||ASCII" + "\n"
@@ -46,6 +45,45 @@ def create_hl7(pid, vital_parameter, send_whole_file, time_from, time_to):
     # with open("_test.txt", "w") as write:
     #     write.writelines(whole_msg)
     return whole_msg
+
+# creates fhir message, not in json
+def create_fhir(request_data):
+    whole_message = []
+    msg_id = 1
+    pid = request_data["subject"]
+    vitals = request_data["code"]
+    vital_values = []
+    status = "partial"
+    time_from = request_data["effective"][0]
+    time_to = request_data["effective"][1]
+    issued = request_data["issued"]
+
+    with open(os.path.join("_data_by_pid", pid + ".txt"), "r") as read_file:
+        for readline in read_file:
+            segment = readline.split("|")
+
+            if segment[0] == "OBR" and int(time_from) <= int(segment[7]) <= int(time_to):
+                one_block_check = True
+
+            if segment[0] == "OBX" and vitals.__contains__(segment[3].strip()) and one_block_check:
+                effective_date_time = segment[14]
+                value_quantity_one_vital = {
+                    "value": float(segment[5]),
+                    "unit": segment[6],
+                    "code": segment[3].strip()
+                }
+                vital_values.append(value_quantity_one_vital)
+
+            if segment[0] == "MSA" and vital_values != []:
+                one_block_check = False
+                observation_message_block = {"resourceType": "Observation", "identifier": msg_id, "subject": pid,
+                                             "status": status, "effectiveDateTime": effective_date_time,
+                                             "issued": issued, "valueQuantity": vital_values}
+                whole_message.append(observation_message_block)
+                msg_id += 1
+                vitals = []
+
+    return whole_message
 
 
 def vitals2plot(pid, vital_parameter, time_from, time_to):
@@ -86,16 +124,27 @@ def simple_comm():
 
     while True:
         initial_request = socket_connection.recv(1024).decode()
-        # print("initial request: ", initial_request)
-        socket_connection.send(initial_request.encode())
+        initial_request = json.loads(initial_request)
+        message_id = initial_request[0]
+        form = initial_request[1]
+        plot = initial_request[2]
+        print("initial request: ", initial_request, initial_request.__sizeof__(), "bytes")
+        # print(message_id, type(message_id), form, type(form))
+        socket_connection.send(message_id.encode())
 
         request = socket_connection.recv(1024)
 
         request = request.decode()
         request = json.loads(request)
-        print(request)
 
-        if request["form"] == "hl7":
+        if form == "fhir":
+            response = create_fhir(
+                request
+            )
+            response = json.dumps(response).encode()
+            socket_connection.sendall(response)
+
+        if form == "hl7":
             response = create_hl7(
                 request["pid"],
                 request["vital_parameter"],
@@ -106,19 +155,35 @@ def simple_comm():
             response = json.dumps(response).encode()
             socket_connection.sendall(response)
 
-        if request["plot"]:
-            plot_data = []
-            for vital in request["vital_parameter"]:
-                plot_data.append(vitals2plot(
-                    request["pid"],
-                    vital,
-                    request["time_from"],
-                    request["time_to"]
-                ))
-            # print(type(plot_data))
-            response = json.dumps(plot_data).encode()
-            # print(response.__sizeof__())
-            socket_connection.sendall(response)
+        if plot:
+            if form == "hl7":
+                plot_data = []
+                for vital in request["vital_parameter"]:
+                    plot_data.append(vitals2plot(
+                        request["pid"],
+                        vital,
+                        request["time_from"],
+                        request["time_to"]
+                    ))
+                # print(type(plot_data))
+                response = json.dumps(plot_data).encode()
+                # print(response.__sizeof__())
+                socket_connection.sendall(response)
+            elif form == "fhir":
+                plot_data = []
+                print(request["subject"], type(request["subject"]))
+                print(request["code"])
+                print(request["effective"][0])
+                print(request["effective"][1])
+                for vital in request["code"]:
+                    plot_data.append(vitals2plot(
+                        str(request["subject"]),
+                        vital,
+                        request["effective"][0],
+                        request["effective"][1]
+                    ))
+                response = json.dumps(plot_data).encode()
+                socket_connection.sendall(response)
 
         if socket_connection.recv(1024).decode() == "response received":
             break
