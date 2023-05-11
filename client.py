@@ -9,15 +9,13 @@ import datetime
 send_whole_file = False  # implemented only for hl7
 client_root = "_client_creations"
 
-standard = "fhir"  # set for either "fhir" or "hl7"
-plot_bool = False  # to plot data
-t_from = "20110802091353"  # taken from OBR in clean msgs
-t_to = "20110802130902"  # ditto
-patient = "2011032"  # particular patient id
-vital_p = ["048000^VITAL AO(S)",
-           "048001^VITAL AO(D)",
-           "048002^VITAL AO(M)"
-           ]  # list of parameters to look for, also taken from files
+standard = "hl7"  # set for either "fhir" or "hl7"
+plot_bool = True  # to plot data
+patient = "2011022"  # particular patient id
+t_from = "20110620145631"  # taken from OBR in clean msgs
+t_to = "20110620160731"  # ditto
+vital_p = ["001000^VITAL HR", "044000^VITAL ART(S)", "044001^VITAL ART(D)", "044002^VITAL ART(M)"]  # list of parameters to look for, also taken from files
+
 parameter_list = scouting.unique_vitals_in_msgs
 
 if not os.path.exists(client_root):

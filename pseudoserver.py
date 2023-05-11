@@ -9,6 +9,7 @@ def create_hl7(pid, vital_parameter, send_whole_file, time_from, time_to):
     msgid = 1
     obx = ""
     obx_num = 1
+    observation_time = time_from
 
     with open(os.path.join("_data_by_pid", pid + ".txt"), "r") as read_patient_file:
 
@@ -21,11 +22,12 @@ def create_hl7(pid, vital_parameter, send_whole_file, time_from, time_to):
             if segment[0] == "OBX" and send_whole_file:
                 obx = obx + readline
 
-            if segment[0] == "OBX" and int(time_from) <= int(observation_time) <= int(time_to) and vital_parameter.__contains__(segment[3].strip()):
-                obx_init = "OBX|" + str(obx_num) + "|NM|" + segment[3].strip() + "|" + segment[4] + "|" + segment[
-                    5] + "|" + segment[6] + "|||||" + segment[11] + "|||" + segment[14] + "|||" + "\n"
-                obx = obx + obx_init
-                obx_num += 1
+            if segment[0] == "OBX":
+                if int(time_from) <= int(observation_time) <= int(time_to) and vital_parameter.__contains__(segment[3].strip()):
+                    obx_init = "OBX|" + str(obx_num) + "|NM|" + segment[3].strip() + "|" + segment[4] + "|" + segment[
+                        5] + "|" + segment[6] + "|||||" + segment[11] + "|||" + segment[14] + "|||" + "\n"
+                    obx = obx + obx_init
+                    obx_num += 1
 
             if segment[0] == "MSA" and obx != "":
                 msh_header = "MSH|^~\&|" + "pseudoserver|" + "userpc|" + "client|" + "client facility|" + datetime.datetime.now().strftime(
@@ -46,6 +48,7 @@ def create_hl7(pid, vital_parameter, send_whole_file, time_from, time_to):
     #     write.writelines(whole_msg)
     return whole_msg
 
+
 # creates fhir message, not in json
 def create_fhir(request_data):
     whole_message = []
@@ -57,11 +60,12 @@ def create_fhir(request_data):
     time_from = request_data["effective"][0]
     time_to = request_data["effective"][1]
     issued = request_data["issued"]
+    one_block_check = False
 
     with open(os.path.join("_data_by_pid", pid + ".txt"), "r") as read_file:
         for readline in read_file:
             segment = readline.split("|")
-
+            # print(readline)
             if segment[0] == "OBR" and int(time_from) <= int(segment[7]) <= int(time_to):
                 one_block_check = True
 
@@ -81,7 +85,7 @@ def create_fhir(request_data):
                                              "issued": issued, "valueQuantity": vital_values}
                 whole_message.append(observation_message_block)
                 msg_id += 1
-                vitals = []
+                vital_values = []
 
     return whole_message
 
@@ -90,6 +94,7 @@ def vitals2plot(pid, vital_parameter, time_from, time_to):
     vital_values = []
     time_at_observation = []
     units_measured = ""
+    one_block_check = False
 
     if not int(time_from) < int(time_to):
         return print("can't plot vital graph, incorrect time input")
@@ -98,14 +103,15 @@ def vitals2plot(pid, vital_parameter, time_from, time_to):
         for line in read_file:
             segment = line.split("|")
 
-            if segment[0] == "OBR" and int(time_from) <= int(segment[7]) <= int(time_to):
+            if segment[0].strip() == "OBR" and int(time_from) <= int(segment[7]) <= int(time_to):
                 one_block_check = True
 
-            if segment[0] == "OBX" and segment[3].strip() == vital_parameter and one_block_check:
-                vital_values.append(float(segment[5]))
-                time_at_observation.append(segment[14])
-                units_measured = segment[6]
-                one_block_check = False
+            if one_block_check:
+                if segment[0] == "OBX" and segment[3].strip() == vital_parameter:
+                    vital_values.append(float(segment[5]))
+                    time_at_observation.append(segment[14])
+                    units_measured = segment[6]
+                    one_block_check = False
 
     read_file.close()
     return time_at_observation, vital_values, pid, vital_parameter, units_measured
