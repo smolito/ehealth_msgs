@@ -1,5 +1,5 @@
 # ehealth_msgs
-Basic HL7 and FHIR message generation scripts with predetermined messages.
+Basic HL7 and FHIR observation message generation scripts with predetermined messages.
 
 HOW TO USE
 
