@@ -9,7 +9,7 @@ import datetime
 send_whole_file = False  # implemented only for hl7
 client_root = "_client_creations"
 
-standard = "hl7"  # set for either "fhir" or "hl7"
+standard = "fhir"  # set for either "fhir" or "hl7"
 plot_bool = True  # to plot data
 patient = "2011022"  # particular patient id
 t_from = "20110620145631"  # taken from OBR in clean msgs
@@ -167,7 +167,7 @@ def reaction2response(data_from_request):
             write_file.close()
 
     if standard == "fhir":
-        with open(os.path.join(client_root, "_fhir_msgs", patient + "_" + str(msgid) + ".txt"), "w") as write_file:
+        with open(os.path.join(client_root, "_fhir_msgs", patient + "_" + str(msgid) + ".json"), "w") as write_file:
             write_file.writelines(data_from_request)
             write_file.close()
 
